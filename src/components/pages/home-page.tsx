@@ -27,22 +27,18 @@ export default function HomePage({
   const employeesReq = useFetchData(getEmployees);
 
   const searchParams = useSearchParams();
-
-  const [tabsValue, setTabsValue] = useState<string>(
-    searchParams.get("current_tab") ?? PageTabs.inventories,
-  );
-
+  const router = useRouter();
+  const currentTab = searchParams.get("current_tab") ?? PageTabs.inventories;
   return (
     <main className="flex-1 w-full max-w-7xl mx-auto max-sm:px-1 flex flex-col sm:flex-row pt-8 gap-8 *:gap-4 pb-2">
       <Toaster />
       <Tabs
-        value={tabsValue}
+        value={currentTab}
         onValueChange={(value) => {
-          const params = new URLSearchParams(searchParams);
+          const params = new URLSearchParams(searchParams.toString());
           params.set("current_tab", value);
-          window.history.replaceState({}, "", `/?${params.toString()}`);
 
-          setTabsValue(value);
+          router.replace(`/?${params.toString()}`, { scroll: false });
         }}
         className="items-center w-full"
       >
