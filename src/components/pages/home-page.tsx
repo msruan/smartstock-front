@@ -1,5 +1,7 @@
 "use client";
 
+import { useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
 import { getEmployees, getInventories } from "@/api/queries";
 import { useFetchData } from "@/hooks/use-fetch-data";
 import { RequestStatus } from "@/types";
@@ -7,6 +9,7 @@ import { cn } from "@/utils";
 import { EmployeeForm } from "../employee-registration";
 import { EmployeesCard } from "../employees-card";
 import { InventoriesCards } from "../inventories-cards/inventories-cards";
+import { Toaster } from "../ui/sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { ErrorWidget, LoadingWidget } from "./_components";
 
@@ -15,13 +18,34 @@ const PageTabs = {
   employees: "Funcionários",
 };
 
-export default function HomePage() {
+export default function HomePage({
+  selectedInventory,
+}: {
+  selectedInventory: string | string[] | null;
+}) {
   const inventoriesReq = useFetchData(getInventories);
   const employeesReq = useFetchData(getEmployees);
 
+  const searchParams = useSearchParams();
+
+  const [tabsValue, setTabsValue] = useState<string>(
+    searchParams.get("current_tab") ?? PageTabs.inventories,
+  );
+
   return (
     <main className="flex-1 w-full max-w-7xl mx-auto max-sm:px-1 flex flex-col sm:flex-row pt-8 gap-8 *:gap-4 pb-2">
-      <Tabs defaultValue={PageTabs.inventories} className="items-center w-full">
+      <Toaster />
+      <Tabs
+        value={tabsValue}
+        onValueChange={(value) => {
+          const params = new URLSearchParams(searchParams);
+          params.set("current_tab", value);
+          window.history.replaceState({}, "", `/?${params.toString()}`);
+
+          setTabsValue(value);
+        }}
+        className="items-center w-full"
+      >
         <TabsList className="w-full max-w-2xl border-2">
           <TabsTrigger
             value={PageTabs.inventories}
@@ -46,7 +70,10 @@ export default function HomePage() {
           {inventoriesReq.status === RequestStatus.PENDING && <LoadingWidget />}
           {inventoriesReq.status === RequestStatus.ERROR && <ErrorWidget />}
           {inventoriesReq.status === RequestStatus.SUCCESS && (
-            <InventoriesCards inventories={inventoriesReq.data ?? []} />
+            <InventoriesCards
+              selectedInventory={selectedInventory}
+              inventories={inventoriesReq.data ?? []}
+            />
           )}
         </TabsContent>
         <TabsContent value={PageTabs.employees} className="flex w-full gap-4">

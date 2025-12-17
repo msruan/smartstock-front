@@ -7,6 +7,7 @@ import type {
   APIErrorDTO,
   CreateEmployeeDTO,
   Employee,
+  InventorySummary,
   LoginRequestDTO,
   LoginResponseDTO,
 } from "@/types";
@@ -120,4 +121,89 @@ export async function refreshTokenAction(): Promise<RefreshReturn> {
   refreshPromise = doRefresh();
 
   return refreshPromise;
+}
+
+export async function activateEmployee(
+  employeeId: number,
+): Promise<Employee | ApplicationException> {
+  const endpoint = `/usuarios/${employeeId}/ativar`;
+  const res = await apiClient(endpoint, {
+    method: "PUT",
+  });
+
+  if (!(res instanceof Response)) {
+    return res;
+  }
+
+  const body: Employee = await res.json();
+
+  return body;
+}
+
+export async function deactivateEmployee(
+  employeeId: number,
+): Promise<Employee | ApplicationException> {
+  const endpoint = `/usuarios/${employeeId}/inativar`;
+  const res = await apiClient(endpoint, {
+    method: "PUT",
+  });
+
+  if (!(res instanceof Response)) {
+    return res;
+  }
+
+  const body: Employee = await res.json();
+
+  return body;
+}
+
+export async function cancelInventory(
+  inventoryId: number,
+): Promise<InventorySummary | ApplicationException> {
+  const endpoint = `/conferencia/${inventoryId}/cancelar`;
+  const res = await apiClient(endpoint, {
+    method: "PUT",
+  });
+
+  if (!(res instanceof Response)) {
+    return res;
+  }
+
+  const body: InventorySummary = await res.json();
+
+  return body;
+}
+
+export async function finishInventory(
+  inventoryId: number,
+): Promise<InventorySummary | ApplicationException> {
+  const endpoint = `/conferencia/${inventoryId}/encerrar`;
+  const res = await apiClient(endpoint, {
+    method: "PUT",
+  });
+
+  if (!(res instanceof Response)) {
+    return res;
+  }
+
+  const body: InventorySummary = await res.json();
+
+  return body;
+}
+
+export async function reopenInventory(
+  inventoryId: number,
+): Promise<InventorySummary | ApplicationException> {
+  const endpoint = `/conferencia/${inventoryId}/reabrir`;
+  const res = await apiClient(endpoint, {
+    method: "PUT",
+  });
+
+  if (!(res instanceof Response)) {
+    return res;
+  }
+
+  const body: InventorySummary = await res.json();
+
+  return body;
 }

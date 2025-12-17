@@ -1,6 +1,14 @@
 "use client";
 
-import { AlertCircleIcon, Loader, PackageSearch, Tag } from "lucide-react";
+import {
+  AlertCircleIcon,
+  Download,
+  Loader,
+  PackageSearch,
+  Tag,
+} from "lucide-react";
+import { toast } from "sonner";
+import { getInventoriePdf } from "@/api/queries";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import {
   type InventoryReading,
@@ -8,9 +16,25 @@ import {
   RequestStatus,
 } from "@/types";
 import { cn } from "@/utils";
+import CancelInventoryDialog from "../dialogs/cancel-inventory";
+import FinishInventoryDialog from "../dialogs/finish-inventory";
+import ReopenInventoryDialog from "../dialogs/reopen-inventory";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "../ui/drawer";
+import { Button } from "../ui/button";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "../ui/card";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "../ui/drawer";
 import {
   Empty,
   EmptyDescription,
@@ -27,11 +51,12 @@ interface Props {
   setSelectedInventory: (inventory: InventorySummary | null) => void;
   inventoryReadings: InventoryReading[] | null;
   hasInventories: boolean;
-  fetchDetailsReqStatus: RequestStatus;
+  fetchDetailReqStatus: RequestStatus;
   fetchedInventoryId: number;
+  mostRecentInventoryId: number | null;
 }
 
-export function InventoryDetailsCard(props: Props) {
+export function InventoryDetailCard(props: Props) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
 
   const hasContent = !!props?.inventoryReadings?.length;
@@ -43,16 +68,73 @@ export function InventoryDetailsCard(props: Props) {
           <CardTitle className={cn("text-center relative", Typography.h3)}>
             Detalhes do inventário
             {props.selectedInventory !== null && (
-              <div className="absolute right-0 bottom-1">
+              <div className="absolute left-0 bottom-1">
                 <InventoryStatusBadge status={props.selectedInventory.status} />
+              </div>
+            )}
+            {props.selectedInventory !== null && (
+              <div className="absolute right-0 bottom-1">
+                <Button
+                  onClick={async () => {
+                    const blob = await getInventoriePdf(
+                      props.selectedInventory!.id,
+                    );
+
+                    if (blob instanceof Error) {
+                      toast.error("Erro ao buscar PDF!");
+                    } else {
+                      try {
+                        const url = window.URL.createObjectURL(blob);
+
+                        const link = document.createElement("a");
+                        link.href = url;
+
+                        link.download = `Inventário-${props.selectedInventory?.id}.pdf`;
+
+                        document.body.appendChild(link);
+
+                        link.click();
+
+                        link.parentNode?.removeChild(link);
+
+                        window.URL.revokeObjectURL(url);
+                      } catch (err) {
+                        toast.error("Erro ao gerar PDF!");
+                      }
+                    }
+                  }}
+                >
+                  <Download />
+                </Button>
               </div>
             )}
           </CardTitle>
         </CardHeader>
 
         <CardContent>
-          <InventoryDetailsContent {...props} />
+          <InventoryDetailContent {...props} />
         </CardContent>
+        {props.selectedInventory?.status === `iniciada` && (
+          <CardFooter className="flex justify-end gap-2">
+            <CancelInventoryDialog inventoryId={props.selectedInventory.id}>
+              <Button variant={"destructive"}>Cancelar</Button>
+            </CancelInventoryDialog>
+            <FinishInventoryDialog inventoryId={props.selectedInventory.id}>
+              <Button className="bg-green-600 hover:bg-green-700">
+                Finalizar
+              </Button>
+            </FinishInventoryDialog>
+          </CardFooter>
+        )}
+        {props.selectedInventory?.status !== `iniciada` &&
+          props.mostRecentInventoryId !== null &&
+          props.mostRecentInventoryId === props.selectedInventory?.id && (
+            <CardFooter className="flex justify-end gap-2">
+              <ReopenInventoryDialog inventoryId={props.selectedInventory.id}>
+                <Button>Reabrir</Button>
+              </ReopenInventoryDialog>
+            </CardFooter>
+          )}
       </Card>
     );
   }
@@ -73,14 +155,31 @@ export function InventoryDetailsCard(props: Props) {
           </DrawerTitle>
         </DrawerHeader>
         <div className={cn("p-4", !hasContent && "pb-60")}>
-          <InventoryDetailsContent {...props} />
+          <InventoryDetailContent {...props} />
         </div>
+        {props.selectedInventory?.status === `iniciada` && (
+          <DrawerFooter>
+            <Button className="bg-green-600 hover:bg-green-700">
+              Finalizar
+            </Button>
+            <Button variant={"destructive"}>Cancelar</Button>
+          </DrawerFooter>
+        )}
+        {props.selectedInventory?.status !== `iniciada` &&
+          props.mostRecentInventoryId !== null &&
+          props.mostRecentInventoryId === props.selectedInventory?.id && (
+            <DrawerFooter className="flex justify-end gap-2">
+              <ReopenInventoryDialog inventoryId={props.selectedInventory.id}>
+                <Button>Reabrir</Button>
+              </ReopenInventoryDialog>
+            </DrawerFooter>
+          )}
       </DrawerContent>
     </Drawer>
   );
 }
 
-function InventoryDetailsContent(props: Omit<Props, "className">) {
+function InventoryDetailContent(props: Omit<Props, "className">) {
   return (
     <>
       {!props.hasInventories && (
@@ -132,13 +231,13 @@ function InventoryDetailsContent(props: Omit<Props, "className">) {
             </p>
           </div>
 
-          {props.fetchDetailsReqStatus === RequestStatus.PENDING && (
+          {props.fetchDetailReqStatus === RequestStatus.PENDING && (
             <Alert>
               <Loader className="h-4 w-4 animate-spin" />
               <AlertTitle>Buscando dados no servidor</AlertTitle>
             </Alert>
           )}
-          {props.fetchDetailsReqStatus === RequestStatus.ERROR && (
+          {props.fetchDetailReqStatus === RequestStatus.ERROR && (
             <Alert variant="destructive">
               <AlertCircleIcon />
               <AlertTitle>Erro ao buscar dados do servidor.</AlertTitle>

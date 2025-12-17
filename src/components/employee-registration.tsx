@@ -1,10 +1,13 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { useForm } from "react-hook-form";
 import z from "zod";
+import { createEmployee } from "@/api/mutations";
 import { useMakeModalResponsive } from "@/hooks/use-make-modal-responsive";
+import type { CreateEmployeeDTO } from "@/types";
 import { cn } from "@/utils";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
@@ -15,7 +18,7 @@ import { Typography } from "./ui/typography";
 const passwordSchema = z.string().min(4).max(50);
 
 const formSchema = z.object({
-  name: z.string().min(2).max(50),
+  username: z.string().min(2).max(50),
   password: passwordSchema,
   confirmPassword: passwordSchema,
 });
@@ -28,8 +31,15 @@ export function EmployeeForm({ className }: { className?: string }) {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-    console.log(values);
+    const payload: CreateEmployeeDTO = {
+      username: values.username,
+      password: values.confirmPassword,
+      role: "stockist",
+    };
+
+    await createEmployee(payload);
+
+    window.location.reload();
   }
 
   const ids = {
@@ -51,7 +61,7 @@ export function EmployeeForm({ className }: { className?: string }) {
             <FieldLabel htmlFor={ids.employeeName}>
               Nome do funcionário
             </FieldLabel>
-            <Input id={ids.employeeName} required {...register("name")} />
+            <Input id={ids.employeeName} required {...register("username")} />
           </Field>
           <Field>
             <FieldLabel htmlFor={ids.employeePassword}>

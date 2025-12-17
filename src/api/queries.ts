@@ -96,3 +96,21 @@ export async function getEmployees(): Promise<
 
   return body.toReversed();
 }
+
+export async function getInventoriePdf(inventoryId: number) {
+  const endpoint = `/relatorios/pdf/?conferencia_id=${inventoryId}`;
+
+  const res = await apiClient(endpoint, {
+    headers: {
+      "Content-Type": "application/pdf",
+    },
+  });
+
+  if (!(res instanceof Response)) {
+    return res;
+  }
+
+  const body = await res.blob();
+
+  return body;
+}

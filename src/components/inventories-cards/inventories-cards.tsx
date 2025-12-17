@@ -1,26 +1,34 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
+import { useEffect } from "react";
 import { useFetchInventoryReadings } from "@/hooks/use-fetch-inventory-readings";
 import type { InventoryStatus, InventorySummary } from "@/types";
 import { cn } from "@/utils";
 import { Badge } from "../ui/badge";
-
 import { InventoriesListCard } from "./inventories-list";
-import { InventoryDetailsCard } from "./inventory-details-card";
+import { InventoryDetailCard } from "./inventory-detail-card";
 
 interface Props {
   inventories: InventorySummary[];
   className?: string;
+  selectedInventory: string | string[] | null;
 }
 
-export function InventoriesCards({ inventories }: Props) {
+export function InventoriesCards({
+  inventories,
+  selectedInventory: renderSelectedInventory,
+}: Props) {
   const {
     selectedInventory,
     setSelectedInventory,
     inventoryReadings: inventoryDetails,
     requestStatus,
     fetchedInventoryId,
-  } = useFetchInventoryReadings();
+  } = useFetchInventoryReadings(
+    inventories,
+    renderSelectedInventory?.toString() ?? null,
+  );
 
   return (
     <>
@@ -30,14 +38,17 @@ export function InventoriesCards({ inventories }: Props) {
         selectedInventory={selectedInventory}
         setSelectedInventory={setSelectedInventory}
       />
-      <InventoryDetailsCard
+      <InventoryDetailCard
+        mostRecentInventoryId={
+          inventories.length > 0 ? (inventories.at(0)?.id ?? null) : null
+        }
         fetchedInventoryId={fetchedInventoryId}
         className="hidden md:flex md:w-1/2"
         hasInventories={inventories.length > 0}
         selectedInventory={selectedInventory}
         setSelectedInventory={setSelectedInventory}
         inventoryReadings={inventoryDetails}
-        fetchDetailsReqStatus={requestStatus}
+        fetchDetailReqStatus={requestStatus}
       />
     </>
   );

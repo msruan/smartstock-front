@@ -1,3 +1,4 @@
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { getInventoryReadings } from "@/api/queries";
 import {
@@ -14,9 +15,17 @@ interface UseReadingsReturn {
   requestStatus: RequestStatus;
 }
 
-export function useFetchInventoryReadings(): UseReadingsReturn {
+export function useFetchInventoryReadings(
+  inventories: InventorySummary[],
+  renderPageParams: string | null,
+): UseReadingsReturn {
   const [selectedInventory, setSelectedInventory] =
-    useState<InventorySummary | null>(null);
+    useState<InventorySummary | null>(
+      renderPageParams
+        ? (inventories.find((i) => i.id.toString() === renderPageParams) ??
+            null)
+        : null,
+    );
 
   const [currentFetchedId, setFetchedId] = useState(-1);
 
@@ -31,9 +40,26 @@ export function useFetchInventoryReadings(): UseReadingsReturn {
   const fetchInfo = useRef<{ isFetching: boolean; inventoryId: number | null }>(
     { isFetching: false, inventoryId: null },
   );
+  const searchParams = useSearchParams();
+
+  const firstRender = useRef(true);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation> [selectedInventory] -> We just want to monitor onSelect event
   useEffect(() => {
+    const params = new URLSearchParams(searchParams);
+
+    if (selectedInventory?.id) {
+      params.set("selected_inventory", selectedInventory.id.toString());
+    } else {
+      params.delete("selected_inventory");
+    }
+
+    if (firstRender.current) {
+      firstRender.current = false;
+    } else {
+      window.history.replaceState({}, "", `/?${params.toString()}`);
+    }
+
     async function attemptFetch(targetId: number) {
       if (!selectedInventory) {
         return;
@@ -45,7 +71,6 @@ export function useFetchInventoryReadings(): UseReadingsReturn {
       };
 
       setRequestStatus(RequestStatus.PENDING);
-
       const data = await getInventoryReadings(targetId);
 
       if (fetchInfo.current.inventoryId !== targetId) {

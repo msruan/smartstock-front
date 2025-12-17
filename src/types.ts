@@ -90,6 +90,7 @@ export interface Employee {
   id: number;
   username: string;
   role: string;
+  is_active: boolean;
 }
 
 export interface CreateEmployeeDTO {
