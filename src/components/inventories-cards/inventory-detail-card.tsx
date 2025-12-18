@@ -98,7 +98,7 @@ export function InventoryDetailCard(props: Props) {
                         link.parentNode?.removeChild(link);
 
                         window.URL.revokeObjectURL(url);
-                      } catch (err) {
+                      } catch {
                         toast.error("Erro ao gerar PDF!");
                       }
                     }

@@ -1,7 +1,5 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
-import { useEffect } from "react";
 import { useFetchInventoryReadings } from "@/hooks/use-fetch-inventory-readings";
 import type { InventoryStatus, InventorySummary } from "@/types";
 import { cn } from "@/utils";

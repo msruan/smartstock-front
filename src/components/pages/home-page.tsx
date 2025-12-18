@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
 import { getEmployees, getInventories } from "@/api/queries";
 import { useFetchData } from "@/hooks/use-fetch-data";
 import { RequestStatus } from "@/types";
